@@ -1,2 +1,26 @@
-.venv
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environments
 .env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# FastAPI / Uvicorn
+*.log
+
+# VS Code / IDEs
+.vscode/
+.idea/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+AGROSPHERE_DEVELOPMENT_CONTEXT.md

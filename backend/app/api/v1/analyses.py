@@ -1,25 +1,73 @@
-from fastapi import APIRouter, Query, HTTPException
-from app.services.isda import fetch_isda_soil_property
-from app.services.weather import fetch_weather_open, summarize_weather_dataframe
-from app.services.location import reverse_geocode
-from app.services.elevation import get_elevation
+from fastapi import APIRouter, Query, HTTPException, Depends
+import asyncio
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.db.session import get_db
+from app.repositories.analysis import AnalysisRepository
+from app.clients.soil import soil_client
+from app.clients.weather import weather_client
+from app.clients.location import location_client
+from app.clients.elevation import elevation_client
 from app.services.llm import generate_soil_summary_with_gemini
 
 router = APIRouter()
 
 @router.get("/summary")
-async def get_summary_info(lat: float = Query(...), lon: float = Query(...)):
+async def get_summary_info(
+    lat: float = Query(...), 
+    lon: float = Query(...),
+    session: AsyncSession = Depends(get_db)
+):
     try:
-        soil_data = await fetch_isda_soil_property(lat, lon)
+        repo = AnalysisRepository(session)
         
-        weather = fetch_weather_open(lat, lon)
-        weather_summary = summarize_weather_dataframe(weather)
-        location_data = reverse_geocode(lat, lon)
-        elevation_data = get_elevation(lat, lon)
+        # 1. Check Cache
+        cached_analysis = await repo.get_cached_analysis(lat, lon)
+        
+        if cached_analysis:
+            if cached_analysis.ai_summary:
+                print("CACHE HIT! Returning stored AI summary.")
+                return cached_analysis.ai_summary
+            else:
+                print("PARTIAL CACHE HIT! Generating AI summary from cached API data...")
+                soil_data = cached_analysis.soil_data
+                weather_summary = cached_analysis.weather_data
+                location_data = cached_analysis.location_data
+                elevation_data = cached_analysis.elevation_data
+                
+                summary = generate_soil_summary_with_gemini(
+                    str(soil_data), str(weather_summary), str(location_data), str(elevation_data)
+                )
+                
+                await repo.update_ai_summary(lat, lon, summary)
+                return summary
+        else:
+            print("CACHE MISS! Fetching from APIs...")
+            # 2. Fetch all external data concurrently
+            soil_task = soil_client.get_soil_properties(lat, lon)
+            weather_task = weather_client.get_weather_summary(lat, lon)
+            location_task = location_client.reverse_geocode(lat, lon)
+            elevation_task = elevation_client.get_elevation(lat, lon)
+            
+            soil_res, weather_res, location_res, elevation_res = await asyncio.gather(
+                soil_task, weather_task, location_task, elevation_task,
+                return_exceptions=True
+            )
 
-        summary = generate_soil_summary_with_gemini(
-            soil_data, weather_summary, location_data, elevation_data
-        )
-        return summary
+            # Convert models to dicts for DB storage, or store error strings
+            soil_data = [s.model_dump() for s in soil_res] if not isinstance(soil_res, Exception) else str(soil_res)
+            weather_summary = weather_res.model_dump() if not isinstance(weather_res, Exception) else str(weather_res)
+            location_data = location_res if not isinstance(location_res, Exception) else str(location_res)
+            elevation_data = float(elevation_res) if not isinstance(elevation_res, Exception) else None
+            
+            # 3. Generate AI Report BEFORE saving to Cache
+            summary = generate_soil_summary_with_gemini(
+                str(soil_data), str(weather_summary), str(location_data), str(elevation_data)
+            )
+            
+            # 4. Save to Cache including the generated summary
+            await repo.save_analysis(lat, lon, soil_data, weather_summary, elevation_data, location_data, summary)
+
+            return summary
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

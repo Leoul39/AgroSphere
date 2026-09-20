@@ -39,7 +39,7 @@ class OpenMeteoClient(BaseHTTPClient):
         super().__init__(timeout=15.0)
 
     async def _fetch_historical(self, lat: float, lon: float, start: str, end: str) -> dict:
-        url = "https://historical-forecast-api.open-meteo.com/v1/archive"
+        url = "https://archive-api.open-meteo.com/v1/archive"
         params = {
             "latitude": lat,
             "longitude": lon,

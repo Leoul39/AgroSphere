@@ -17,14 +17,13 @@ class Settings(BaseModel):
     DB_HOST: str = os.getenv("DB_HOST", "localhost")
     DB_PORT: str = os.getenv("DB_PORT", "5432")
     DB_NAME: str = os.getenv("DB_NAME", "soil_info_db")
-    
-    @property
-    def DATABASE_URL(self) -> str:
-        return f"postgresql+psycopg2://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "")
         
     @property
     def ASYNC_DATABASE_URL(self) -> str:
-        return f"postgresql+asyncpg://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+        return self.DATABASE_URL.replace(
+            "postgresql://", "postgresql+asyncpg://"
+        )
     
     # External API Keys
     OPENCAGE_API_KEY: str = os.getenv("opencage_api_key", "")

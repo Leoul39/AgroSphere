@@ -17,6 +17,6 @@ class AnalysisCache(BaseModel):
     weather_data = Column(JSONB, nullable=True)
     elevation_data = Column(Float, nullable=True)
     location_data = Column(JSONB, nullable=True)
-    ai_summary = Column(String, nullable=True)
+    ai_summary = Column(JSONB, nullable=True)
     
     expires_at = Column(DateTime(timezone=True), nullable=False, index=True)

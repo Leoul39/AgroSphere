@@ -62,7 +62,13 @@ UNFARMABLE_REASON = "{unfarmable_reason}"
    - Recommend suitable crops and fertilizers based on the data.
 
 ## COMPREHENSIVE SUMMARIES
-If IS_FARMABLE is True, you MUST write highly detailed, comprehensive summaries (3-5 sentences each) for the `climate_summary` (which MUST explicitly detail both the general regional climate and the current weather conditions), `location_summary`, and `soil_health_summary` fields so the user gets a complete picture of the coordinate's agricultural profile. If `soil_data` is empty, missing, or contains an Exception, do NOT hallucinate an API error or authentication failure. Simply state that detailed soil data is not available for this specific coordinate."""
+If IS_FARMABLE is True, you MUST write highly detailed, comprehensive summaries (3-5 sentences each) for `climate_summary`, `general_location_summary`, `coordinate_specific_summary`, and `soil_health_summary`.
+
+CRITICAL RULE FOR LOCATION:
+- `general_location_summary`: Describe the broader region and district based on the OpenStreetMap location data.
+- `coordinate_specific_summary`: Describe the EXACT terrain at the coordinate. You MUST prioritize the `crop_cover_2019` percentage from the soil data. If the historical crop cover is > 5%, you MUST describe it as an active or historical agricultural field. DO NOT hallucinate forests, cities, or lakes based on the general OpenStreetMap district name. The OpenStreetMap name is just a district boundary, while the crop_cover_2019 is exact satellite ground-truth.
+
+If `soil_data` is empty, missing, or contains an Exception, do NOT hallucinate an API error. Simply state that detailed soil data is not available."""
 
     # Build the User Prompt (Just the data)
     prompt = f"""## Location Information

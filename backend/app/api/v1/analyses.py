@@ -17,6 +17,13 @@ def check_land_use(soil_data, location_data) -> tuple[bool, str]:
     reason = ""
     
     if isinstance(location_data, dict):
+        loc_info = location_data.get("locational_info", {})
+        country = loc_info.get("country", "Unknown Location")
+        
+        # Geofence to Ethiopia
+        if "ethiopia" not in country.lower():
+            return False, f"AgroSphere's current version is exclusively calibrated for agricultural analysis within Ethiopia (Detected: {country}). We cannot process coordinates in other countries at this time."
+
         loc_cat = location_data.get("category", "")
         loc_type = location_data.get("type", "")
         unfarmable_keywords = [
@@ -91,15 +98,35 @@ async def get_summary_info(
             soil_data = [s.model_dump() for s in soil_res] if not isinstance(soil_res, Exception) else str(soil_res)
             weather_summary = weather_res.model_dump() if not isinstance(weather_res, Exception) else str(weather_res)
             location_data = location_res if not isinstance(location_res, Exception) else str(location_res)
-            elevation_data = float(elevation_res) if not isinstance(elevation_res, Exception) else None
+            
+            if isinstance(elevation_res, Exception) or elevation_res is None:
+                elevation_data = None
+            else:
+                elevation_data = float(elevation_res)
             
             # 3. Check Land-Use
             is_farmable, unfarmable_reason = check_land_use(soil_data, location_data)
             
-            # 4. Generate AI Report BEFORE saving to Cache
-            summary = await generate_soil_summary_with_gemini(
-                str(soil_data), str(weather_summary), str(location_data), str(elevation_data), is_farmable, unfarmable_reason
-            )
+            if not is_farmable:
+                # Fast-fail for unfarmable land (e.g. outside Ethiopia, oceans, cities)
+                # Bypasses the 8-second Gemini generation time.
+                summary = {
+                    "is_farmable": False,
+                    "unfarmable_reason": unfarmable_reason,
+                    "general_location_summary": "Analysis aborted due to location constraints.",
+                    "coordinate_specific_summary": "",
+                    "climate_summary": "",
+                    "soil_health_summary": "",
+                    "recommended_crops": [],
+                    "soil_amendments": [],
+                    "risk_factors": [],
+                    "irrigation_advice": ""
+                }
+            else:
+                # 4. Generate AI Report BEFORE saving to Cache
+                summary = await generate_soil_summary_with_gemini(
+                    str(soil_data), str(weather_summary), str(location_data), str(elevation_data), is_farmable, unfarmable_reason
+                )
             
             # 5. Save to Cache including the generated summary
             await repo.save_analysis(lat, lon, soil_data, weather_summary, elevation_data, location_data, summary)

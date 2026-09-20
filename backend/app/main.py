@@ -8,10 +8,18 @@ app = FastAPI(
     openapi_url=f"{settings.API_V1_STR}/openapi.json"
 )
 
+import os
+
 # Set all CORS enabled origins
+frontend_url = os.getenv("FRONTEND_URL", "https://agrosphere.vercel.app")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://127.0.0.1:5500", "http://localhost:5173"], # Vite default
+    allow_origins=[
+        "http://127.0.0.1:5500", 
+        "http://localhost:5173",
+        frontend_url
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

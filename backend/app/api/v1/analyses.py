@@ -20,8 +20,8 @@ def check_land_use(soil_data, location_data) -> tuple[bool, str]:
         loc_cat = location_data.get("category", "")
         loc_type = location_data.get("type", "")
         unfarmable_keywords = [
-            "highway", "building", "commercial", "residential", "industrial", 
-            "retail", "amenity", "office", "leisure", "water", "lake", "river", 
+            "building", "commercial", "industrial", 
+            "retail", "office", "water", "lake", "river", 
             "reservoir", "wetland", "ocean", "sea"
         ]
         if loc_cat in unfarmable_keywords or loc_type in unfarmable_keywords:
@@ -68,7 +68,7 @@ async def get_summary_info(
                 
                 is_farmable, unfarmable_reason = check_land_use(soil_data, location_data)
                 
-                summary = generate_soil_summary_with_gemini(
+                summary = await generate_soil_summary_with_gemini(
                     str(soil_data), str(weather_summary), str(location_data), str(elevation_data), is_farmable, unfarmable_reason
                 )
                 
@@ -97,7 +97,7 @@ async def get_summary_info(
             is_farmable, unfarmable_reason = check_land_use(soil_data, location_data)
             
             # 4. Generate AI Report BEFORE saving to Cache
-            summary = generate_soil_summary_with_gemini(
+            summary = await generate_soil_summary_with_gemini(
                 str(soil_data), str(weather_summary), str(location_data), str(elevation_data), is_farmable, unfarmable_reason
             )
             

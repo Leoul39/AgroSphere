@@ -21,7 +21,8 @@ class AgriculturalReport(BaseModel):
     is_farmable: bool = Field(description="True if the location is suitable for farming, False if it is urban, concrete, or otherwise unfarmable.")
     unfarmable_reason: Optional[str] = Field(description="If not farmable, clearly explain why to the user (e.g., Urban area, Highway).")
     
-    location_summary: str = Field(description="A brief description of the geographic location and its agricultural region.")
+    general_location_summary: str = Field(description="A brief description of the geographic region, district, and nearest city based on OpenStreetMap data.")
+    coordinate_specific_summary: str = Field(description="A precise description of the exact terrain and landscape at the specific coordinates, heavily prioritizing the crop_cover_2019 satellite percentage.")
     climate_summary: str = Field(description="A comprehensive summary of the current and expected weather patterns, seasons, and elevation impact.")
     soil_health_summary: str = Field(description="A comprehensive summary of the soil composition, texture, and fertility based on ISDA properties.")
     

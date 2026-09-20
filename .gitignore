@@ -23,4 +23,6 @@ venv.bak/
 .DS_Store
 Thumbs.db
 
-AGROSPHERE_DEVELOPMENT_CONTEXT.md
+# Documentation
+AGROSPHERE_DEVELOPMENT.md
+Walkthrough.md

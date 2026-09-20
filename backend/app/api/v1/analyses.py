@@ -12,6 +12,37 @@ from app.services.llm import generate_soil_summary_with_gemini
 
 router = APIRouter()
 
+def check_land_use(soil_data, location_data) -> tuple[bool, str]:
+    is_farmable = True
+    reason = ""
+    
+    if isinstance(location_data, dict):
+        loc_cat = location_data.get("category", "")
+        loc_type = location_data.get("type", "")
+        unfarmable_keywords = [
+            "highway", "building", "commercial", "residential", "industrial", 
+            "retail", "amenity", "office", "leisure", "water", "lake", "river", 
+            "reservoir", "wetland", "ocean", "sea"
+        ]
+        if loc_cat in unfarmable_keywords or loc_type in unfarmable_keywords:
+            return False, "This location appears to be an urban area, infrastructure, or a water body based on geographic data."
+            
+    if not soil_data or soil_data == "[]" or soil_data == [] or isinstance(soil_data, str):
+        return False, "Please choose another location. We don't have soil data for deserts, waterbodies, and areas outside Africa."
+
+    if isinstance(soil_data, list):
+        if len(soil_data) == 0:
+            return False, "Please choose another location. We don't have soil data for deserts, waterbodies, and areas outside Africa."
+            
+        for prop in soil_data:
+            if isinstance(prop, dict) and prop.get("code") == "crop_cover_2019":
+                mean_val = prop.get("mean")
+                if mean_val is not None and float(mean_val) < 5.0:
+                    return False, "This location appears to be barren, desert, or undisturbed natural land with <5% historical crop cover."
+                break
+                
+    return is_farmable, reason
+
 @router.get("/summary")
 async def get_summary_info(
     lat: float = Query(...), 
@@ -35,8 +66,10 @@ async def get_summary_info(
                 location_data = cached_analysis.location_data
                 elevation_data = cached_analysis.elevation_data
                 
+                is_farmable, unfarmable_reason = check_land_use(soil_data, location_data)
+                
                 summary = generate_soil_summary_with_gemini(
-                    str(soil_data), str(weather_summary), str(location_data), str(elevation_data)
+                    str(soil_data), str(weather_summary), str(location_data), str(elevation_data), is_farmable, unfarmable_reason
                 )
                 
                 await repo.update_ai_summary(lat, lon, summary)
@@ -60,12 +93,15 @@ async def get_summary_info(
             location_data = location_res if not isinstance(location_res, Exception) else str(location_res)
             elevation_data = float(elevation_res) if not isinstance(elevation_res, Exception) else None
             
-            # 3. Generate AI Report BEFORE saving to Cache
+            # 3. Check Land-Use
+            is_farmable, unfarmable_reason = check_land_use(soil_data, location_data)
+            
+            # 4. Generate AI Report BEFORE saving to Cache
             summary = generate_soil_summary_with_gemini(
-                str(soil_data), str(weather_summary), str(location_data), str(elevation_data)
+                str(soil_data), str(weather_summary), str(location_data), str(elevation_data), is_farmable, unfarmable_reason
             )
             
-            # 4. Save to Cache including the generated summary
+            # 5. Save to Cache including the generated summary
             await repo.save_analysis(lat, lon, soil_data, weather_summary, elevation_data, location_data, summary)
 
             return summary

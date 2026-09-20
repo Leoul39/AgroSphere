@@ -27,6 +27,8 @@ class OSMClient(BaseHTTPClient):
                     "input_coordinates": {"lat": lat, "lon": lon},
                     "formatted_city": data.get("display_name"),
                     "locational_info": data.get("address"),
+                    "category": data.get("category"),
+                    "type": data.get("type"),
                     "bounds_of_city": data.get("boundingbox"), # [lat_min, lat_max, lon_min, lon_max]
                     "center_of_city": {"lat": data.get("lat"), "lon": data.get("lon")}
                 }

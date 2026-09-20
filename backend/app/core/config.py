@@ -17,12 +17,21 @@ class Settings(BaseModel):
     DB_HOST: str = os.getenv("DB_HOST", "localhost")
     DB_PORT: str = os.getenv("DB_PORT", "5432")
     DB_NAME: str = os.getenv("DB_NAME", "soil_info_db")
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "")
+    
+    @property
+    def DATABASE_URL(self) -> str:
+        url = os.getenv("DATABASE_URL")
+        if url:
+            return url
+        return f"postgresql+psycopg2://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
         
     @property
     def ASYNC_DATABASE_URL(self) -> str:
+        # Support converting both standard postgresql:// and psycopg2:// variants to asyncpg
         return self.DATABASE_URL.replace(
             "postgresql://", "postgresql+asyncpg://"
+        ).replace(
+            "postgresql+psycopg2://", "postgresql+asyncpg://"
         )
     
     # External API Keys

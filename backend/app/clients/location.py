@@ -16,7 +16,8 @@ class OSMClient(BaseHTTPClient):
         params = {
             "lat": lat,
             "lon": lon,
-            "format": "jsonv2"
+            "format": "jsonv2",
+            "accept-language": "en"
         }
         
         try:

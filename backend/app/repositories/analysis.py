@@ -37,7 +37,7 @@ class AnalysisRepository:
         weather_data: dict, 
         elevation_data: float,
         location_data: dict,
-        ai_summary: str
+        ai_summary: dict
     ) -> AnalysisCache:
         location_key = self._get_location_key(lat, lon)
         
@@ -61,7 +61,7 @@ class AnalysisRepository:
         await self.session.refresh(new_cache)
         return new_cache
 
-    async def update_ai_summary(self, lat: float, lon: float, ai_summary: str):
+    async def update_ai_summary(self, lat: float, lon: float, ai_summary: dict):
         location_key = self._get_location_key(lat, lon)
         stmt = select(AnalysisCache).where(AnalysisCache.location_key == location_key)
         result = await self.session.execute(stmt)

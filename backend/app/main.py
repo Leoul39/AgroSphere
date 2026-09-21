@@ -16,8 +16,10 @@ frontend_url = os.getenv("FRONTEND_URL", "https://agrosphere.vercel.app")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://127.0.0.1:5500", 
+        "http://127.0.0.1:5500",
         "http://localhost:5173",
+        "https://agro-sphere-gilt.vercel.app",
+        "https://agro-sphere-47zfzagqq-leoul.vercel.app",
         frontend_url
     ],
     allow_credentials=True,

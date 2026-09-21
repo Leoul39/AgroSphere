@@ -1,8 +1,6 @@
-import React from 'react';
 import type { AgriculturalReport } from '../../types';
 import styles from './IntelligencePanel.module.css';
 import { Leaf, MapPin, Droplets, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
-const logoUrl = '/agrosphere-logo-transparent.svg'; // Using the logo the user provided
 
 interface Props {
   data: AgriculturalReport | null;
@@ -11,7 +9,7 @@ interface Props {
 }
 
 export default function IntelligencePanel({ data, isLoading, coordinate }: Props) {
-  
+
   // Idle State
   if (!coordinate && !isLoading && !data) {
     return (
@@ -64,7 +62,7 @@ export default function IntelligencePanel({ data, isLoading, coordinate }: Props
   // Success State
   return (
     <div className={styles.reportContainer}>
-      
+
       {/* Header */}
       <div className={styles.header}>
         <div className={`${styles.statusBadge} ${styles.badgeSuccess}`}>
@@ -113,9 +111,9 @@ export default function IntelligencePanel({ data, isLoading, coordinate }: Props
               </div>
               <p className={styles.rationale}>{crop.rationale}</p>
               <div className={styles.progressBarBg}>
-                <div 
-                  className={styles.progressBarFill} 
-                  style={{ width: `${crop.suitability_score}%` }} 
+                <div
+                  className={styles.progressBarFill}
+                  style={{ width: `${crop.suitability_score}%` }}
                 />
               </div>
               <p className={styles.growingDays}>Est. Growing Days: {crop.estimated_growing_days}</p>
@@ -138,13 +136,13 @@ export default function IntelligencePanel({ data, isLoading, coordinate }: Props
             ))}
           </ul>
         </div>
-        
+
         <div className={styles.card}>
           <h3 className={styles.sectionTitle}>Risk Factors</h3>
           <ul className={styles.list}>
             {data.risk_factors.map((risk, idx) => (
               <li key={idx} className={styles.listItem}>
-                <strong>{risk.risk_type} <AlertTriangle size={14} className={styles.warningIcon}/></strong>
+                <strong>{risk.risk_type} <AlertTriangle size={14} className={styles.warningIcon} /></strong>
                 <p>{risk.description}</p>
                 <div className={styles.mitigation}>
                   <em>Mitigation:</em> {risk.mitigation_strategy}
